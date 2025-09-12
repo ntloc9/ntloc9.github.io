@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Stock Data Downloader</title>
+  <script type="module" crossorigin src="/assets/index-DJv-aeeM.js"></script>
+</head>
+<body>
+  <h2>Download Stock Data (Excel)</h2>
+  <form id="downloadForm">
+    <label>
+      Data Source:
+      <select id="dataSource">
+        <option value="cafef">cafef.vn</option>
+        <option value="vndirect">dstock vndirect</option>
+      </select>
+    </label><br><br>
+    <label>
+      Symbol (Stock ID):
+      <input type="text" id="symbol" value="NHT" required>
+    </label><br><br>
+    <label>
+      Start Date:
+      <input type="date" id="startDate" required>
+    </label><br><br>
+    <label>
+      End Date:
+      <input type="date" id="endDate" required>
+    </label><br><br>
+    <label>
+      Page Size:
+      <input type="number" id="pageSize" required value=100000>
+    </label><br><br>
+    <button type="submit">Download End of Month</button><br><br>
+    <button type="button" id="downloadAllBtn">Download Full</button>
+  </form>
+</body>
+</html>
