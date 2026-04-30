@@ -1,38 +1,127 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>Stock Data Downloader</title>
-  <script type="module" crossorigin src="assets/index-DJv-aeeM.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/pure-min.css"
+    integrity="sha384-X38yfunGUhNzHpBaEBsWLO+A0HDYOQi8ufWDkZ0k9e0eXz/tH3II7uKZ9msv++Ls" crossorigin="anonymous">
+  <style>
+    html {
+      height: 100%;
+    }
+
+    body {
+      padding: 24px;
+    }
+
+    .form-section {
+      margin-top: 16px;
+    }
+
+    .form-column,
+    .form-column-secondary {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      height: 100%;
+      padding-right: 16px;
+      box-sizing: border-box;
+    }
+
+    .form-column .pure-control-group,
+    .form-column-secondary .pure-control-group {
+      margin-bottom: 0;
+    }
+
+    .form-column input,
+    .form-column select,
+    .form-column button,
+    .form-column-secondary input,
+    .form-column-secondary button {
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .form-actions,
+    .secondary-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .secondary-actions {
+      margin-top: auto;
+    }
+
+    @media (max-width: 47.999em) {
+
+      .form-column,
+      .form-column-secondary {
+        padding-right: 0;
+      }
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/index-B0xEO8b-.js"></script>
 </head>
+
 <body>
   <h2>Download Stock Data (Excel)</h2>
-  <form id="downloadForm">
-    <label>
-      Data Source:
-      <select id="dataSource">
-        <option value="cafef">cafef.vn</option>
-        <option value="vndirect">dstock vndirect</option>
-      </select>
-    </label><br><br>
-    <label>
-      Symbol (Stock ID):
-      <input type="text" id="symbol" required>
-    </label><br><br>
-    <label>
-      Start Date:
-      <input type="date" id="startDate" required>
-    </label><br><br>
-    <label>
-      End Date:
-      <input type="date" id="endDate" required>
-    </label><br><br>
-    <label>
-      Page Size:
-      <input type="number" id="pageSize" required value=100000>
-    </label><br><br>
-    <button type="submit">Download End of Month</button><br><br>
-    <button type="button" id="downloadAllBtn">Download Full</button>
+  <form id="downloadForm" class="pure-form pure-form-stacked">
+    <fieldset>
+      <div class="pure-g">
+        <div class="pure-u-1 pure-u-lg-1-2">
+          <div class="pure-control-group">
+            <label for="dataSource">Data Source:</label>
+            <select id="dataSource">
+              <!-- <option value="SSI">SSI</option> -->
+              <option value="vndirect">dstock vndirect</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="pure-g form-section">
+        <div class="pure-u-1-4 ">
+          <div class="form-column">
+            <div class="pure-control-group">
+              <label for="symbol">Symbol (Stock ID):</label>
+              <input type="text" id="symbol" value="NHT" required>
+            </div>
+            <div class="pure-control-group">
+              <label for="startDate">Start Date:</label>
+              <input type="date" id="startDate" required>
+            </div>
+            <div class="pure-control-group">
+              <label for="endDate">End Date:</label>
+              <input type="date" id="endDate" required>
+            </div>
+            <div class="pure-control-group">
+              <label for="pageSize">Page Size:</label>
+              <input type="number" id="pageSize" required value="100000">
+            </div>
+            <div class="form-actions">
+              <button type="submit" id="downloadEomBtn" class="pure-button pure-button-primary">Download End of
+                Month</button>
+              <button type="button" id="downloadAllBtn" class="pure-button">Download Full</button>
+            </div>
+          </div>
+        </div>
+        <div class="pure-u-1-4">
+          <div class="form-column-secondary">
+            <div class="pure-control-group">
+              <label for="symbol-multiple">Symbols (Multiple):</label>
+              <input type="text" id="symbol-multiple">
+            </div>
+            <div class="secondary-actions">
+              <button type="button" id="downloadNgansFormatBtn" class="pure-button">Download with Ngan's
+                format</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </fieldset>
   </form>
 </body>
+
 </html>
