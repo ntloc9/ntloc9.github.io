@@ -3,125 +3,843 @@
 
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Download historical Vietnamese stock prices as an Excel file.">
   <title>Stock Data Downloader</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/pure-min.css"
-    integrity="sha384-X38yfunGUhNzHpBaEBsWLO+A0HDYOQi8ufWDkZ0k9e0eXz/tH3II7uKZ9msv++Ls" crossorigin="anonymous">
+  <script>
+    try {
+      document.documentElement.dataset.theme = localStorage.getItem('stock-data-downloader/theme') || 'light';
+    } catch {
+      document.documentElement.dataset.theme = 'light';
+    }
+  </script>
   <style>
-    html {
-      height: 100%;
+    :root {
+      color-scheme: light;
+      --bg: #f5f6f8;
+      --bg-inset: #f0f2f5;
+      --surface: #ffffff;
+      --border: #dfe3e8;
+      --text: #14171a;
+      --muted: #667085;
+      --accent: #1f6feb;
+      --accent-hover: #1a5fd0;
+      --accent-soft: #e7f0fd;
+      --accent-strong: #1a5fd0;
+      --accent-ring: rgba(31, 111, 235, .22);
+      --ok: #14803c;
+      --ok-soft: #e6f6ea;
+      --warn: #8a6100;
+      --warn-soft: #fdf3d3;
+      --err: #c02637;
+      --err-soft: #fdecee;
+      --shadow: 0 1px 2px rgba(16, 24, 40, .05), 0 1px 3px rgba(16, 24, 40, .04);
+      --radius: 14px;
+    }
+
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #0d1117;
+      --bg-inset: #161b22;
+      --surface: #12171e;
+      --border: #2a313b;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #4493f8;
+      --accent-hover: #58a0f8;
+      --accent-soft: rgba(68, 147, 248, .14);
+      --accent-strong: #79b0f8;
+      --accent-ring: rgba(68, 147, 248, .28);
+      --ok: #56d364;
+      --ok-soft: rgba(63, 185, 80, .13);
+      --warn: #e3b341;
+      --warn-soft: rgba(227, 179, 65, .13);
+      --err: #f85149;
+      --err-soft: rgba(248, 81, 73, .13);
+      --shadow: none;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    [hidden] {
+      display: none !important;
     }
 
     body {
-      padding: 24px;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
     }
 
-    .form-section {
-      margin-top: 16px;
-    }
-
-    .form-column,
-    .form-column-secondary {
+    .app {
+      max-width: 940px;
+      margin: 0 auto;
+      padding: 32px 20px 72px;
       display: flex;
       flex-direction: column;
       gap: 16px;
-      height: 100%;
-      padding-right: 16px;
-      box-sizing: border-box;
     }
 
-    .form-column .pure-control-group,
-    .form-column-secondary .pure-control-group {
-      margin-bottom: 0;
+    /* ---------- header ---------- */
+    .app-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 4px;
     }
 
-    .form-column input,
-    .form-column select,
-    .form-column button,
-    .form-column-secondary input,
-    .form-column-secondary button {
-      width: 100%;
-      box-sizing: border-box;
+    .theme-toggle {
+      margin-left: auto;
+      flex: none;
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      cursor: pointer;
+      transition: color .12s, border-color .12s;
     }
 
-    .form-actions,
-    .secondary-actions {
+    .theme-toggle:hover {
+      color: var(--text);
+      border-color: var(--accent);
+    }
+
+    .theme-toggle:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .theme-toggle svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .theme-toggle .icon-moon {
+      display: none;
+    }
+
+    :root[data-theme="dark"] .theme-toggle .icon-sun {
+      display: none;
+    }
+
+    :root[data-theme="dark"] .theme-toggle .icon-moon {
+      display: block;
+    }
+
+    .logo {
+      width: 38px;
+      height: 38px;
+      flex: none;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      background: var(--accent-soft);
+      color: var(--accent-strong);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 19px;
+      font-weight: 650;
+      letter-spacing: -.01em;
+    }
+
+    .subtitle {
+      margin: 1px 0 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    /* ---------- cards ---------- */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px 20px 20px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 16px;
     }
 
-    .secondary-actions {
+    .card-title {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin: 0;
+      font-size: 12px;
+      font-weight: 650;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--muted);
+    }
+
+    .step {
+      display: grid;
+      place-items: center;
+      width: 19px;
+      height: 19px;
+      flex: none;
+      border-radius: 6px;
+      background: var(--bg-inset);
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: 0;
+    }
+
+    .tag {
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent-strong);
+      font-size: 10.5px;
+      letter-spacing: .04em;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 18px 28px;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* ---------- fields ---------- */
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field-label {
+      font-size: 12.5px;
+      font-weight: 600;
+    }
+
+    .hint {
+      margin: 0;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .hint code {
+      font-size: 11.5px;
+      padding: 1px 4px;
+      border-radius: 4px;
+      background: var(--bg-inset);
+    }
+
+    input[type="text"],
+    input[type="date"],
+    input[type="number"] {
+      width: 100%;
+      padding: 9px 11px;
+      font: inherit;
+      font-size: 14px;
+      color: var(--text);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      transition: border-color .12s, box-shadow .12s;
+    }
+
+    input:focus-visible {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-ring);
+    }
+
+    input.upper {
+      text-transform: uppercase;
+      letter-spacing: .02em;
+    }
+
+    ::placeholder {
+      color: var(--muted);
+      opacity: .7;
+    }
+
+    input.upper::placeholder {
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    input[aria-invalid="true"] {
+      border-color: var(--err);
+    }
+
+    /* ---------- segmented radio ---------- */
+    .segmented {
+      display: inline-flex;
+      align-self: flex-start;
+      gap: 3px;
+      padding: 3px;
+      background: var(--bg-inset);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      max-width: 100%;
+      flex-wrap: wrap;
+    }
+
+    .segmented label {
+      position: relative;
+      display: block;
+    }
+
+    .segmented input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      margin: 0;
+      cursor: pointer;
+    }
+
+    .segmented span {
+      display: block;
+      padding: 6px 14px;
+      border-radius: 7px;
+      font-size: 13px;
+      color: var(--muted);
+      white-space: nowrap;
+      cursor: pointer;
+      transition: color .12s, background .12s;
+    }
+
+    .segmented input:checked+span {
+      background: var(--surface);
+      color: var(--text);
+      font-weight: 600;
+      box-shadow: var(--shadow);
+    }
+
+    .segmented input:focus-visible+span {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    /* ---------- date range ---------- */
+    .range-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .range-row input {
+      flex: 1 1 0;
+      min-width: 0;
+      max-width: 190px;
+    }
+
+    .range-sep {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 2px;
+    }
+
+    .chip-btn {
+      padding: 4px 11px;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      cursor: pointer;
+      transition: color .12s, border-color .12s, background .12s;
+    }
+
+    .chip-btn:hover {
+      color: var(--text);
+      border-color: var(--accent);
+    }
+
+    .chip-btn[aria-pressed="true"] {
+      background: var(--accent-soft);
+      border-color: transparent;
+      color: var(--accent-strong);
+      font-weight: 650;
+    }
+
+    /* ---------- advanced ---------- */
+    details.advanced {
+      border-top: 1px solid var(--border);
+      padding-top: 14px;
+    }
+
+    details.advanced summary {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    details.advanced summary::-webkit-details-marker {
+      display: none;
+    }
+
+    details.advanced summary::before {
+      content: "";
+      width: 5px;
+      height: 5px;
+      border-right: 1.5px solid currentColor;
+      border-bottom: 1.5px solid currentColor;
+      transform: rotate(-45deg);
+      transition: transform .15s;
+    }
+
+    details.advanced[open] summary::before {
+      transform: rotate(45deg);
+    }
+
+    details.advanced summary:hover {
+      color: var(--text);
+    }
+
+    details.advanced .field {
+      margin-top: 12px;
+      max-width: 260px;
+    }
+
+    /* ---------- buttons ---------- */
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
       margin-top: auto;
     }
 
-    @media (max-width: 47.999em) {
+    .btn {
+      flex: 1 1 150px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 16px;
+      font: inherit;
+      font-size: 13.5px;
+      font-weight: 600;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background .12s, border-color .12s, opacity .12s;
+    }
 
-      .form-column,
-      .form-column-secondary {
-        padding-right: 0;
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent-hover);
+    }
+
+    .btn-secondary {
+      background: var(--surface);
+      border-color: var(--border);
+      color: var(--text);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      border-color: var(--accent);
+      color: var(--accent-strong);
+    }
+
+    .btn:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .btn:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    .spinner {
+      display: none;
+      width: 13px;
+      height: 13px;
+      flex: none;
+      border: 2px solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+      opacity: .85;
+      animation: spin .6s linear infinite;
+    }
+
+    .btn.is-loading .spinner {
+      display: block;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .spinner {
+        animation-duration: 1.8s;
+      }
+    }
+
+    /* ---------- chips ---------- */
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      min-height: 0;
+    }
+
+    .chips:empty {
+      display: none;
+    }
+
+    .chips span {
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: var(--bg-inset);
+      border: 1px solid var(--border);
+      font-size: 11.5px;
+      font-weight: 600;
+      letter-spacing: .02em;
+      color: var(--muted);
+    }
+
+    /* ---------- status ---------- */
+    .status {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface);
+      font-size: 13.5px;
+    }
+
+    .status .icon {
+      flex: none;
+      width: 16px;
+      height: 16px;
+      margin-top: 2px;
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 50%;
+      color: #fff;
+    }
+
+    .status .body {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .status .msg {
+      font-weight: 550;
+    }
+
+    .status .detail {
+      font-size: 12.5px;
+      color: var(--muted);
+      white-space: pre-line;
+    }
+
+    .status[data-kind="loading"] {
+      background: var(--bg-inset);
+    }
+
+    .status[data-kind="loading"] .icon {
+      border: 2px solid var(--muted);
+      border-right-color: transparent;
+      animation: spin .6s linear infinite;
+      background: none;
+    }
+
+    .status[data-kind="success"] {
+      background: var(--ok-soft);
+      border-color: transparent;
+    }
+
+    .status[data-kind="success"] .icon {
+      background: var(--ok);
+    }
+
+    .status[data-kind="warn"] {
+      background: var(--warn-soft);
+      border-color: transparent;
+    }
+
+    .status[data-kind="warn"] .icon {
+      background: var(--warn);
+    }
+
+    .status[data-kind="error"] {
+      background: var(--err-soft);
+      border-color: transparent;
+    }
+
+    .status[data-kind="error"] .icon {
+      background: var(--err);
+    }
+
+    /* ---------- preview ---------- */
+    .preview-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .table-scroll {
+      overflow: auto;
+      max-height: 340px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 12.5px;
+    }
+
+    th,
+    td {
+      padding: 7px 11px;
+      text-align: right;
+      white-space: nowrap;
+      border-bottom: 1px solid var(--border);
+      font-variant-numeric: tabular-nums;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: var(--bg-inset);
+      color: var(--muted);
+      font-weight: 650;
+    }
+
+    th:first-child,
+    td:first-child {
+      text-align: left;
+      font-weight: 600;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr:hover td {
+      background: var(--bg-inset);
+    }
+
+    /* ---------- responsive ---------- */
+    @media (max-width: 720px) {
+
+      .grid,
+      .split {
+        grid-template-columns: 1fr;
+      }
+
+      .app {
+        padding: 24px 16px 56px;
+      }
+
+      .range-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .range-sep {
+        display: none;
+      }
+
+      .range-row input {
+        max-width: none;
       }
     }
   </style>
-  <script type="module" crossorigin src="./assets/index-CAwY-brE.js"></script>
+  <script type="module" crossorigin src="./assets/index-DvHFaMIp.js"></script>
 </head>
 
 <body>
-  <h2>Download Stock Data (Excel)</h2>
-  <form id="downloadForm" class="pure-form pure-form-stacked">
-    <fieldset>
-      <div class="pure-g">
-        <div class="pure-u-1 pure-u-lg-1-2">
-          <div class="pure-control-group">
-            <label for="dataSource">Data Source:</label>
-            <select id="dataSource">
-              <option value="vndirect">dstock vndirect</option>
-              <option value="SSI">SSI</option>
-            </select>
-          </div>
-        </div>
+  <div class="app">
+    <header class="app-header">
+      <div class="logo" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 3v18h18" />
+          <path d="M7 14l4-5 3 3 4-6" />
+        </svg>
       </div>
+      <div>
+        <h1>Stock Data Downloader</h1>
+        <p class="subtitle">Vietnamese historical prices, exported to Excel (.xlsx)</p>
+      </div>
+      <button type="button" id="themeToggle" class="theme-toggle" aria-label="Switch to dark theme" aria-pressed="false">
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+        </svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+        </svg>
+      </button>
+    </header>
 
-      <div class="pure-g form-section">
-        <div class="pure-u-1-4">
-          <div class="form-column">
-            <div class="pure-control-group">
-              <label for="symbol">Symbol (Stock ID):</label>
-              <input type="text" id="symbol" placeholder="ACB" required>
+    <form id="downloadForm" novalidate>
+      <section class="card">
+        <h2 class="card-title"><span class="step">1</span>Source &amp; date range</h2>
+
+        <div class="split">
+          <div class="field">
+            <span class="field-label" id="dataSourceLabel">Data source</span>
+            <div class="segmented" id="dataSource" role="radiogroup" aria-labelledby="dataSourceLabel">
+              <label>
+                <input type="radio" name="dataSource" value="vndirect" checked>
+                <span>DStock &middot; VNDirect</span>
+              </label>
+              <label>
+                <input type="radio" name="dataSource" value="SSI">
+                <span>SSI iBoard</span>
+              </label>
             </div>
-            <div class="pure-control-group">
-              <label for="startDate">Start Date:</label>
-              <input type="date" id="startDate" required>
+            <p class="hint" id="sourceHint"></p>
+          </div>
+
+          <div class="field">
+            <span class="field-label">Date range</span>
+            <div class="range-row">
+              <input type="date" id="startDate" aria-label="Start date">
+              <span class="range-sep" aria-hidden="true">&rarr;</span>
+              <input type="date" id="endDate" aria-label="End date">
             </div>
-            <div class="pure-control-group">
-              <label for="endDate">End Date:</label>
-              <input type="date" id="endDate" required>
+            <div class="presets" id="presets" aria-label="Quick ranges">
+              <button type="button" class="chip-btn" data-months="12" aria-pressed="false">1Y</button>
+              <button type="button" class="chip-btn" data-months="36" aria-pressed="false">3Y</button>
+              <button type="button" class="chip-btn" data-months="60" aria-pressed="false">5Y</button>
+              <button type="button" class="chip-btn" data-months="120" aria-pressed="false">10Y</button>
+              <button type="button" class="chip-btn" data-ytd="1" aria-pressed="false">YTD</button>
             </div>
-            <div class="pure-control-group">
-              <label for="pageSize">Page Size:</label>
-              <input type="number" id="pageSize" required value="100000">
-            </div>
-            <div class="form-actions">
-              <button type="submit" id="downloadEomBtn" class="pure-button pure-button-primary">Download End of
-                Month</button>
-              <button type="button" id="downloadAllBtn" class="pure-button">Download Full</button>
-            </div>
+            <p class="hint" id="rangeHint"></p>
           </div>
         </div>
-        <div class="pure-u-1-4">
-          <div class="form-column-secondary">
-            <div class="pure-control-group">
-              <label for="symbol-multiple">Symbols (Multiple):</label>
-              <input type="text" id="symbol-multiple" placeholder="ACB,FPT,VIC">
-            </div>
-            <div class="secondary-actions">
-              <button type="button" id="downloadNgansFormatBtn" class="pure-button">Download with Ngan's
-                format</button>
-            </div>
+
+        <details class="advanced">
+          <summary>Advanced</summary>
+          <div class="field">
+            <label class="field-label" for="pageSize">Page size</label>
+            <input type="number" id="pageSize" value="100000" min="1" step="1000">
+            <p class="hint">Rows requested per API call. VNDirect returns the whole range at once; SSI caps a page at 40
+              rows and is paged automatically, so leave this as is.</p>
           </div>
-        </div>
+        </details>
+      </section>
+
+      <div class="grid">
+        <section class="card">
+          <h2 class="card-title"><span class="step">2</span>One symbol</h2>
+          <div class="field">
+            <label class="field-label" for="symbol">Symbol</label>
+            <input type="text" id="symbol" class="upper" placeholder="ACB" list="symbolSuggestions" autocomplete="off"
+              spellcheck="false" autocapitalize="characters">
+            <p class="hint">A ticker, or a market index such as <code>VNINDEX</code> (VNDirect only).</p>
+          </div>
+          <div class="actions">
+            <button type="submit" id="downloadEomBtn" class="btn btn-primary">
+              <span class="spinner" aria-hidden="true"></span>End of month
+            </button>
+            <button type="button" id="downloadAllBtn" class="btn btn-secondary">
+              <span class="spinner" aria-hidden="true"></span>Full history
+            </button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 class="card-title"><span class="step">3</span>Many symbols<span class="tag">Ngan's format</span></h2>
+          <div class="field">
+            <label class="field-label" for="symbol-multiple">Symbols</label>
+            <input type="text" id="symbol-multiple" class="upper" placeholder="ACB, FPT, VIC" autocomplete="off"
+              spellcheck="false" autocapitalize="characters">
+            <div class="chips" id="symbolChips"></div>
+            <p class="hint">Comma or space separated. One sheet: <code>Date</code> plus a column per symbol, end of
+              month, newest first.</p>
+          </div>
+          <div class="actions">
+            <button type="button" id="downloadNgansFormatBtn" class="btn btn-primary">
+              <span class="spinner" aria-hidden="true"></span>Download merged sheet
+            </button>
+          </div>
+        </section>
       </div>
-    </fieldset>
-  </form>
+    </form>
+
+    <div id="status" class="status" role="status" aria-live="polite" hidden></div>
+
+    <section class="card" id="previewCard" hidden>
+      <div class="preview-head">
+        <h2 class="card-title" id="previewTitle">Preview</h2>
+        <span class="hint" id="previewMeta"></span>
+      </div>
+      <div class="table-scroll">
+        <table id="previewTable"></table>
+      </div>
+    </section>
+
+    <datalist id="symbolSuggestions">
+      <option value="VNINDEX"></option>
+      <option value="VN30"></option>
+      <option value="VN100"></option>
+      <option value="VNMID"></option>
+      <option value="VNSML"></option>
+      <option value="VNDIAMOND"></option>
+      <option value="VNFINLEAD"></option>
+      <option value="HNX30"></option>
+      <option value="ACB"></option>
+      <option value="FPT"></option>
+      <option value="VIC"></option>
+      <option value="VCB"></option>
+      <option value="VNM"></option>
+      <option value="HPG"></option>
+    </datalist>
+  </div>
 </body>
 
 </html>
